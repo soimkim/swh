@@ -436,26 +436,9 @@ def _update_save_request_info(
         # Create content-origin mappings when visit is successful
         if snapshot_id:
             try:
-                # Get all content from the snapshot and create mappings
-                from swh.web.utils import config
-                from swh.model.hashutil import hash_to_hex
-                storage = config.storage()
-                snapshot = storage.snapshot_get(hash_to_bytes(snapshot_id))
-                if snapshot:
-                    # Create mappings for all content in the snapshot
-                    content_count = 0
-                    for branch_name, branch_info in snapshot.branches.items():
-                        if branch_info.target_type == "content":
-                            content_sha1_git = hash_to_hex(branch_info.target)
-                            save_content_origin_mapping(content_sha1_git, save_request.origin_url)
-                            content_count += 1
-                        elif branch_info.target_type == "directory":
-                            # For directories, we could recursively find content
-                            # For now, just create a mapping for the directory itself
-                            dir_sha1_git = hash_to_hex(branch_info.target)
-                            save_content_origin_mapping("dir_" + dir_sha1_git, save_request.origin_url)
-                    
-                    logger.info(f"Created {content_count} content-origin mappings for snapshot {snapshot_id} from origin: {save_request.origin_url}")
+                # Use the helper function to create mappings
+                _create_content_origin_mappings(snapshot_id, save_request.origin_url)
+                logger.info(f"Created content-origin mappings for snapshot {snapshot_id} from origin: {save_request.origin_url}")
             except Exception as e:
                 logger.warning(f"Failed to create content-origin mapping for snapshot: {e}")
 
@@ -956,3 +939,56 @@ def has_pending_save_code_now_requests() -> bool:
         SaveOriginRequest.objects.filter(status=SAVE_REQUEST_PENDING).first()
         is not None
     )
+
+
+def _create_content_origin_mappings(snapshot_id: str, origin_url: str) -> None:
+    """
+    Create content-origin mappings for all content in a snapshot.
+    
+    Args:
+        snapshot_id: SHA1 Git hash of the snapshot
+        origin_url: Origin URL where the content was saved from
+    """
+    try:
+        import requests
+        from swh.model.hashutil import hash_to_bytes, hash_to_hex
+        
+        # Get snapshot information
+        response = requests.get(f"http://localhost:5004/api/1/snapshot/{snapshot_id}/")
+        if response.status_code != 200:
+            logger.warning(f"Failed to get snapshot {snapshot_id}")
+            return
+            
+        snapshot_data = response.json()
+        branches = snapshot_data.get('branches', {})
+        
+        content_count = 0
+        
+        # Get main branch revision
+        main_branch = branches.get('refs/heads/main')
+        if main_branch and main_branch.get('target_type') == 'revision':
+            revision_id = main_branch.get('target')
+            
+            # Get revision information
+            rev_response = requests.get(f"http://localhost:5004/api/1/revision/{revision_id}/")
+            if rev_response.status_code == 200:
+                rev_data = rev_response.json()
+                directory_id = rev_data.get('directory')
+                
+                # Get directory information
+                dir_response = requests.get(f"http://localhost:5004/api/1/directory/{directory_id}/")
+                if dir_response.status_code == 200:
+                    dir_data = dir_response.json()
+                    
+                    # Create mappings for all files
+                    for entry in dir_data:
+                        if entry.get('type') == 'file':
+                            content_sha1_git = entry.get('target')
+                            if content_sha1_git:
+                                save_content_origin_mapping(content_sha1_git, origin_url)
+                                content_count += 1
+        
+        logger.info(f"Created {content_count} content-origin mappings for snapshot {snapshot_id}")
+        
+    except Exception as e:
+        logger.warning(f"Failed to create content-origin mappings for snapshot {snapshot_id}: {e}")
