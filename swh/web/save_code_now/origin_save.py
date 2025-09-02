@@ -412,6 +412,17 @@ def _update_save_request_info(
         ):
             must_save = True
             save_request.loading_task_status = loading_task_status
+            
+            # Create content-origin mappings when task succeeds
+            if loading_task_status == SAVE_TASK_SUCCEEDED:
+                try:
+                    # Get snapshot ID from visit info
+                    _, _, snapshot_id = _get_visit_info_for_save_request(save_request)
+                    if snapshot_id:
+                        _create_content_origin_mappings(snapshot_id, save_request.origin_url)
+                        logger.info(f"Created content-origin mappings for succeeded task from origin: {save_request.origin_url}")
+                except Exception as e:
+                    logger.warning(f"Failed to create content-origin mappings for succeeded task: {e}")
 
     # Try to get snapshot identifier associated to the save request
     if (

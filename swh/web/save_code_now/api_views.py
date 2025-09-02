@@ -274,4 +274,16 @@ def api_save_origin(
             sors = get_save_origin_requests(visit_type, origin_url)
             return [_cleanup_and_enrich_sor_data(sor) for sor in sors]
         else:
-            return _cleanup_and_enrich_sor_data(get_save_origin_request(request_id))
+            # Get save request and trigger status update
+            from swh.web.save_code_now.origin_save import update_save_origin_requests_from_queryset
+            from swh.web.save_code_now.models import SaveOriginRequest
+            
+            # Get the save request
+            save_request = SaveOriginRequest.objects.get(id=request_id)
+            
+            # Trigger status update which will create mappings if task succeeded
+            updated_sors = update_save_origin_requests_from_queryset([save_request])
+            if updated_sors:
+                return _cleanup_and_enrich_sor_data(updated_sors[0])
+            else:
+                return _cleanup_and_enrich_sor_data(get_save_origin_request(request_id))
