@@ -438,14 +438,24 @@ def _update_save_request_info(
             try:
                 # Get all content from the snapshot and create mappings
                 from swh.web.utils import config
+                from swh.model.hashutil import hash_to_hex
                 storage = config.storage()
                 snapshot = storage.snapshot_get(hash_to_bytes(snapshot_id))
                 if snapshot:
-                    # Create mapping for the origin URL
-                    # Note: This creates a general mapping for the origin
-                    # Individual content mappings would need to be created by the loader
-                    save_content_origin_mapping("snapshot_" + snapshot_id, save_request.origin_url)
-                    logger.info(f"Created content-origin mapping for snapshot {snapshot_id} from origin: {save_request.origin_url}")
+                    # Create mappings for all content in the snapshot
+                    content_count = 0
+                    for branch_name, branch_info in snapshot.branches.items():
+                        if branch_info.target_type == "content":
+                            content_sha1_git = hash_to_hex(branch_info.target)
+                            save_content_origin_mapping(content_sha1_git, save_request.origin_url)
+                            content_count += 1
+                        elif branch_info.target_type == "directory":
+                            # For directories, we could recursively find content
+                            # For now, just create a mapping for the directory itself
+                            dir_sha1_git = hash_to_hex(branch_info.target)
+                            save_content_origin_mapping("dir_" + dir_sha1_git, save_request.origin_url)
+                    
+                    logger.info(f"Created {content_count} content-origin mappings for snapshot {snapshot_id} from origin: {save_request.origin_url}")
             except Exception as e:
                 logger.warning(f"Failed to create content-origin mapping for snapshot: {e}")
 

@@ -185,12 +185,52 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
         if origin_url:
             return origin_url
         
-        # Method 2: Fallback to original methods
+        # Method 2: Search through all origins to find where this content exists
         from swh.web.utils import config
-        indexer_storage = config.indexer_storage()
+        storage = config.storage()
         
-        # Search for content in origin intrinsic metadata
+        # Get the content object to find its relationships
         try:
+            content = storage.content_get(hash_to_bytes(content_id))
+            if not content:
+                return None
+        except Exception:
+            return None
+        
+        # Method 3: Search through directory entries to find the origin
+        try:
+            # Search for this content in directory entries
+            search = config.search()
+            if search:
+                # Search for content in directory entries
+                search_results = search.content_search(
+                    sha1_git=content_id,
+                    limit=10
+                )
+                if search_results.results:
+                    # For each result, try to find the origin
+                    for result in search_results.results:
+                        try:
+                            # Get the directory that contains this content
+                            dir_id = result.get('directory')
+                            if dir_id:
+                                # Find origins that contain this directory
+                                origin_results = search.origin_search(
+                                    metadata_pattern=f"directory:{dir_id}",
+                                    limit=1
+                                )
+                                if origin_results.results:
+                                    return origin_results.results[0]["url"]
+                        except Exception:
+                            continue
+        except Exception:
+            pass
+        
+        # Method 4: Search through indexer storage
+        try:
+            indexer_storage = config.indexer_storage()
+            
+            # Search for content in origin intrinsic metadata
             content_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
                 conjunction=[f"content:{content_id}"], limit=1
             )
@@ -201,8 +241,9 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
         except Exception:
             pass
         
-        # Try searching with different patterns
+        # Method 5: Try searching with different patterns
         try:
+            indexer_storage = config.indexer_storage()
             content_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
                 conjunction=[content_id], limit=5
             )
@@ -216,17 +257,19 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
         except Exception:
             pass
         
-        # Try to find through search API
+        # Method 6: Search through all recent origins
         try:
-            search = config.search()
-            if search:
-                search_results = search.origin_search(
-                    metadata_pattern=content_id,
-                    limit=1
-                )
-                if search_results.results:
-                    origin_url = search_results.results[0]["url"]
-                    return origin_url
+            # Get recent origins and check if they contain this content
+            recent_origins = archive.origin_search(limit=100)
+            for origin_info in recent_origins:
+                try:
+                    origin_url = origin_info["url"]
+                    # Check if this origin has content similar to our content_id
+                    # This is a heuristic approach
+                    if content_id in str(origin_info):
+                        return origin_url
+                except Exception:
+                    continue
         except Exception:
             pass
             
