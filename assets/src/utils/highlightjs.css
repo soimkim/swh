@@ -1,0 +1,34 @@
+/**
+ * Copyright (C) 2018-2019  The Software Heritage developers
+ * See the AUTHORS file at the top-level directory of this distribution
+ * License: GNU Affero General Public License version 3, or any later version
+ * See top-level LICENSE file for more information
+ */
+
+.highlightjs pre {
+    background-color: transparent;
+    border-radius: 0;
+    border-color: transparent;
+}
+
+.hljs {
+    background-color: transparent;
+    white-space: pre;
+}
+
+/* for block of numbers */
+.hljs-ln-numbers {
+    cursor: pointer;
+    user-select: none;
+    text-align: center;
+    color: #aaa;
+    border-right: 1px solid #ccc;
+    vertical-align: top;
+    padding-right: 1px !important;
+}
+
+/* for block of code */
+.hljs-ln-code {
+    padding-left: 10px !important;
+    width: 100%;
+}

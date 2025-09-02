@@ -1,0 +1,154 @@
+/**
+ * Copyright (C) 2018-2024  The Software Heritage developers
+ * See the AUTHORS file at the top-level directory of this distribution
+ * License: GNU Affero General Public License version 3, or any later version
+ * See top-level LICENSE file for more information
+ */
+
+.swh-browse-nav li a {
+    border-radius: 4px;
+}
+
+.scrollable-menu {
+    max-height: 180px;
+    overflow-x: hidden;
+}
+
+.swh-loading {
+    display: none;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.swh-loading.show {
+    display: block;
+}
+
+.swh-table-cell-text-overflow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.swh-directory-table {
+    margin-bottom: 0;
+}
+
+.swh-directory-table td {
+    border-top: 1px solid #ddd !important;
+}
+
+.swh-title-color {
+    color: #e20026;
+}
+
+.swh-log-entry-message {
+    min-width: 440px;
+    max-width: 440px;
+    width: 440px;
+}
+
+.swh-search-pagination {
+    margin-top: 5px;
+}
+
+.ui-slideouttab-panel {
+    z-index: 30000;
+}
+
+.swh-side-tab {
+    width: 70vw;
+    top: 0;
+}
+
+.swh-side-tab .handle {
+    color: white;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+}
+
+.swh-side-tab-content {
+    height: 100%;
+    min-height: 300px;
+    overflow: auto;
+}
+
+.swh-side-tab i.mdi {
+    pointer-events: none;
+}
+
+#swh-identifiers {
+    border: 1px solid #e20026;
+}
+
+#swh-identifiers .handle {
+    background-color: #e20026 !important;
+    border: 1px solid #e20026 !important;
+}
+
+#swh-citations {
+    border: 1px solid #f16d20;
+}
+
+#swh-citations .handle {
+    background-color: #f16d20 !important;
+    border: 1px solid #f16d20 !important;
+    color: black;
+}
+
+#swh-identifiers .handle:hover {
+    background-color: #c30024 !important;
+    border: 1px solid #c30024 !important;
+}
+
+#swh-citations .handle:hover {
+    border: 1px solid #d25c1c !important;
+    background-color: #d25c1c !important;
+}
+
+.swh-empty-snapshot {
+    white-space: pre-line;
+}
+
+td.swh-branch-name {
+    max-width: 300px;
+}
+
+td.swh-branch-message {
+    min-width: 500px;
+    max-width: 500px;
+}
+
+td.swh-branch-date {
+    min-width: 250px;
+}
+
+.chosen-container-active {
+    box-shadow: 0 0 0 0.2rem rgb(226 0 38 / 25%);
+    z-index: 10;
+}
+
+#swh-tab-branches ul,
+#swh-tab-releases ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#swh-go-to-origin {
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.citation-format {
+    max-width: 200px;
+}
+
+.swh-citation {
+    white-space: pre-wrap;
+    max-height: 400px;
+}
+
+.btn-swhid-copy, .btn-swhid-url-copy, .btn-citation-copy {
+    width: 125px;
+    height: 32px;
+}

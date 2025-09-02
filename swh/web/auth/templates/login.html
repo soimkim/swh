@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% comment %}
+Copyright (C) 2018-2024  The Software Heritage developers
+See the AUTHORS file at the top-level directory of this distribution
+License: GNU Affero General Public License version 3, or any later version
+See top-level LICENSE file for more information
+{% endcomment %}
+
+{% load static %}
+
+{% block page_title %}
+  Login
+{% endblock page_title %}
+
+{% block navbar-content %}
+  <h4>Login</h4>
+{% endblock navbar-content %}
+
+{% block content %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button id="login-submit" class="btn btn-secondary" type="submit">Login</button>
+  </form>
+{% endblock content %}

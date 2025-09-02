@@ -1,0 +1,30 @@
+/**
+ * Copyright (C) 2018-2019  The Software Heritage developers
+ * See the AUTHORS file at the top-level directory of this distribution
+ * License: GNU Affero General Public License version 3, or any later version
+ * See top-level LICENSE file for more information
+ */
+
+.swh-showdown a {
+    border: none;
+}
+
+.swh-showdown table {
+    border-collapse: collapse;
+}
+
+.swh-showdown table,
+.swh-showdown table th,
+.swh-showdown table td {
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+}
+
+.swh-showdown table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.swh-showdown img,
+.swh-showdown svg {
+    max-width: 100%;
+}

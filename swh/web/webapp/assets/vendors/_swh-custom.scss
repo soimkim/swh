@@ -1,0 +1,52 @@
+/**
+ * Copyright (C) 2018-2024  The Software Heritage developers
+ * See the AUTHORS file at the top-level directory of this distribution
+ * License: GNU Affero General Public License version 3, or any later version
+ * See top-level LICENSE file for more information
+ */
+
+// override some global bootstrap sass variables before generating stylesheets
+
+// global text colors and fonts
+$primary: #e20026;
+$secondary: #f8f9fa;
+$body-color: rgba(0, 0, 0, 0.55);
+$link-color: #000000;
+$link-decoration: none;
+$link-hover-decoration: underline;
+$font-family-sans-serif: "Alegreya Sans", sans-serif !important;
+$code-color: #c7254e;
+$lte-card-shadow: none !default;
+
+// headings
+$headings-line-height: 1.1;
+$headings-color: #e20026;
+$headings-font-family: "Alegreya Sans", sans-serif !important;
+
+// dropdown menu padding
+$dropdown-padding-y: 0.25rem;
+$dropdown-item-padding-x: 0;
+$dropdown-item-padding-y: 0;
+
+// card header padding
+$card-spacer-y: 0.5rem;
+
+// nav pills colors
+$nav-pills-link-active-color: rgba(0, 0, 0, 0.55);
+$nav-pills-link-active-bg: #f2f4f5;
+
+// table cell padding
+$table-cell-padding: 0.4rem;
+
+// remove container padding
+$grid-gutter-width: 0;
+
+// adapt some UI components colors to match SWH theme
+$table-bg: transparent;
+$table-color: rgba(0, 0, 0, 0.55);
+$form-label-font-weight: 700;
+$nav-link-color:rgba(0, 0, 0, 0.55);
+$dropdown-link-color: #000000;
+$pagination-disabled-bg: #ffffff;
+$pagination-focus-box-shadow: none;
+

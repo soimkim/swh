@@ -1,0 +1,25 @@
+{% comment %}
+Copyright (C) 2017-2023  The Software Heritage developers
+See the AUTHORS file at the top-level directory of this distribution
+License: GNU Affero General Public License version 3, or any later version
+See top-level LICENSE file for more information
+{% endcomment %}
+
+{% if breadcrumbs %}
+  {% if iframe_mode or breadcrumbs|length > 1 or breadcrumbs.0.url %}
+    <nav class="bread-crumbs swh-browse-bread-crumbs" aria-label="Breadcrumbs">
+      <ul>
+        {% for bc in breadcrumbs %}
+          {% if bc.url %}
+            <li class="swh-path">
+              <a href="{{ bc.url | safe }}">{{ bc.name }}</a>
+            </li>
+            <li>/</li>
+          {% else %}
+            <li>{{ bc.name }}</li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </nav>
+  {% endif %}
+{% endif %}

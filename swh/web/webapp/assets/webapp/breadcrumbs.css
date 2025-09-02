@@ -1,0 +1,32 @@
+/**
+ * Copyright (C) 2018-2021  The Software Heritage developers
+ * See the AUTHORS file at the top-level directory of this distribution
+ * License: GNU Affero General Public License version 3, or any later version
+ * See top-level LICENSE file for more information
+ */
+
+.bread-crumbs {
+    display: inline-block;
+    overflow: hidden;
+    color: rgb(0 0 0 / 55%);
+}
+
+.bread-crumbs ul {
+    list-style-type: none;
+    height: 100%;
+}
+
+.bread-crumbs li {
+    float: left;
+    list-style-type: none;
+}
+
+.bread-crumbs a {
+    color: rgb(0 0 0 / 75%);
+    border-bottom-style: none;
+}
+
+.bread-crumbs a:hover {
+    color: rgb(0 0 0 / 85%);
+    text-decoration: underline;
+}

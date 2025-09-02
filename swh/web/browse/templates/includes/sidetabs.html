@@ -1,0 +1,252 @@
+{% comment %}
+Copyright (C) 2017-2025  The Software Heritage developers
+See the AUTHORS file at the top-level directory of this distribution
+License: GNU Affero General Public License version 3, or any later version
+See top-level LICENSE file for more information
+{% endcomment %}
+
+{% load swh_templatetags %}
+
+{{ activate_citations_ui|json_script:"activate_citations_ui" }}
+{% if swhids_info %}
+  <div id="swh-identifiers" class="swh-side-tab">
+    <button id="swhids-handle"
+            class="btn btn-secondary handle ui-slideouttab-handle ui-slideouttab-handle-rounded"
+            aria-expanded="false"
+            aria-label="Expand permalinks tab"
+            title="Expand permalinks tab">
+      <i class="mdi mdi-link-variant mdi-fw" aria-hidden="true"></i>
+      {% if swhids_info|length > 1 %}
+        Permalinks
+      {% else %}
+        Permalink
+      {% endif %}
+      <i class="tab-handle-arrow mdi mdi-chevron-up mdi-fw" aria-hidden="true"></i>
+    </button>
+    <div id="swh-identifiers-content"
+         class="swh-side-tab-content"
+         style="display: none">
+      <p class="mb-0">
+        To
+        <a target="_blank"
+           rel="noopener noreferrer"
+           href="https://www.softwareheritage.org/howto-archive-and-reference-your-code/">
+          reference or cite
+        </a>
+        the objects present in the Software Heritage archive, permalinks based on
+        <a target="_blank"
+           rel="noopener noreferrer"
+           href="https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html">
+          SoftWare Hash IDentifiers (SWHIDs)
+        </a>
+        must be used.
+        <br />
+        Select below a type of object currently browsed in order to display its
+        associated SWHID and permalink.
+      </p>
+      <ul id="swhid-object-types" class="nav nav-pills ms-auto p-2">
+        {% for swhid_info in swhids_info %}
+          {% if forloop.first %}
+            <li class="nav-item">
+              <a class="nav-link active"
+                 href="#swhid-tab-{{ swhid_info.object_type.name.lower }}"
+                 data-bs-toggle="tab">
+                <i class="{{ swh_object_icons|key_value:swhid_info.object_type.name.lower }} mdi-fw"
+                   aria-hidden="true"></i>{{ swhid_info.object_type.name.lower }}
+              </a>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link"
+                 href="#swhid-tab-{{ swhid_info.object_type.name.lower }}"
+                 data-bs-toggle="tab">
+                <i class="{{ swh_object_icons|key_value:swhid_info.object_type.name.lower }} mdi-fw"
+                   aria-hidden="true"></i>{{ swhid_info.object_type.name.lower }}
+              </a>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+      <div class="tab-content">
+        {% for swhid_info in swhids_info %}
+          <div class="tab-pane {% if forloop.first %}active{% endif %}"
+               id="swhid-tab-{{ swhid_info.object_type.name.lower }}">
+            <div class="card">
+              <div class="card-body swhid-ui">
+                {% if not iframe_mode %}
+                  <div class="row swh-badges-iframe">
+                    {% if "swh.web.badges" in SWH_DJANGO_APPS %}
+                      <div class="swh-badges">
+                        {% if snapshot_context and snapshot_context.origin_info %}
+                          <img class="swh-badge swh-badge-origin"
+                               alt="origin badge"
+                               src="{% url 'swh-badge' 'origin' snapshot_context.origin_info.url %}"
+                               onclick="swh.badges.showBadgeInfoModal('origin', '{{ snapshot_context.origin_info.url|urlencode:"/?:@&" }}')"
+                               title="Click to display badge integration info" />
+                        {% endif %}
+                        {% if swhid_info.object_id %}
+                          <img class="swh-badge swh-badge-{{ swhid_info.object_type.name.lower }}"
+                               alt="{{ swhid_info.object_type.name.lower }} badge"
+                               src="{% url 'swh-badge' swhid_info.object_type.name.lower swhid_info.object_id %}"
+                               onclick="swh.badges.showBadgeInfoModal('{{ swhid_info.object_type.name.lower }}', $(this).closest('.swhid-ui').find('.swhid').text())"
+                               title="Click to display badge integration info" />
+                        {% endif %}
+                        {% if swhid_info.object_type.name.lower == "content" or swhid_info.object_type.name.lower == "directory" %}
+                          <a class="ms-auto float-end"
+                             style="cursor: pointer"
+                             role="button"
+                             onclick="swh.browse.showIframeInfoModal('{{ swhid_info.object_type.name.lower }}', $(this).closest('.swhid-ui').find('.swhid').text())">
+                            Iframe embedding
+                          </a>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+                {% if swhid_info.object_id %}
+                  <pre><a class="swhid" target="_blank" rel="noopener noreferrer" id="{{ swhid_info.swhid }}" href="{{ swhid_info.swhid_url }}">{{ swhid_info.swhid }}</a></pre>
+                {% endif %}
+                {% if swhid_info.swhid_with_context is not None %}
+                  <div class="float-start">
+                    <form id="swhid-options-{{ swhid_info.object_type.name.lower }}"
+                          aria-label="Options for {{ swhid_info.object_type.name.lower }} SWHID">
+                      <div class="form-check swhid-option">
+                        <input class="form-check-input swhid-context-option"
+                               value="option-origin"
+                               type="checkbox"
+                               id="swhid-context-option-{{ swhid_info.object_type.name.lower }}"
+                               data-swhid-with-context="{{ swhid_info.swhid_with_context }}"
+                               data-swhid-with-context-url="{{ swhid_info.swhid_with_context_url }}"
+                               onclick="swh.browse.swhIdContextOptionToggled(event)"
+                               checked />
+                        <label class="form-check-label font-weight-normal"
+                               for="swhid-context-option-{{ swhid_info.object_type.name.lower }}">
+                          Add contextual information
+                        </label>
+                      </div>
+                    </form>
+                  </div>
+                {% endif %}
+                <div id="swhid-copy-buttons" class="float-end">
+                  <button type="button"
+                          class="btn btn-secondary btn-sm btn-swhid-copy"
+                          title="Copy SWHID to clipboard">
+                    <i class="mdi mdi-content-copy mdi-fw" aria-hidden="true"></i>Copy identifier
+                  </button>
+                  <button type="button"
+                          class="btn btn-secondary btn-sm btn-swhid-url-copy"
+                          title="Copy url resolving the SWHID to clipboard">
+                    <i class="mdi mdi-content-copy mdi-fw" aria-hidden="true"></i>Copy permalink
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% if activate_citations_ui or request.user.is_staff or user_is_ambassador %}
+    <div id="swh-citations" class="swh-side-tab d-none">
+      <button id="citations-handle"
+              class="btn btn-secondary handle ui-slideouttab-handle ui-slideouttab-handle-rounded"
+              aria-expanded="false"
+              aria-label="Expand citations tab"
+              title="Expand citations tab">
+        <i class="mdi mdi-book-open-variant-outline mdi-fw" aria-hidden="true"></i>
+        Citations
+        <i class="tab-handle-arrow mdi mdi-chevron-up mdi-fw" aria-hidden="true"></i>
+      </button>
+      <div id="swh-citations-content"
+           class="swh-side-tab-content"
+           style="display: none">
+        <p class="mb-0">
+          This interface enables to generate software citations, provided
+          that the root directory of browsed objects contains a
+          <a href="https://citation-file-format.github.io/"
+             target="_blank"
+             rel="noopener noreferrer">citation.cff</a> or
+          <a href="https://codemeta.github.io/user-guide/"
+             target="_blank"
+             rel="noopener noreferrer">codemeta.json</a> file.
+          <br />
+          Select below a type of object currently browsed in order to generate citations for them.
+        </p>
+        <ul id="citation-object-types" class="nav nav-pills ml-auto p-2">
+          {% for swhid_info in swhids_info %}
+            {% if forloop.first %}
+              <li class="nav-item">
+                <a class="nav-link active"
+                   href="#citation-tab-{{ swhid_info.object_type.name.lower }}"
+                   data-bs-toggle="tab"
+                   onclick="swh.browse.generateCitationForObjectType(event)">
+                  <i class="{{ swh_object_icons|key_value:swhid_info.object_type.name.lower }} mdi-fw"
+                     aria-hidden="true"></i>{{ swhid_info.object_type.name.lower }}
+                </a>
+              </li>
+            {% else %}
+              <li class="nav-item">
+                <a class="nav-link"
+                   href="#citation-tab-{{ swhid_info.object_type.name.lower }}"
+                   data-bs-toggle="tab"
+                   onclick="swh.browse.generateCitationForObjectType(event)">
+                  <i class="{{ swh_object_icons|key_value:swhid_info.object_type.name.lower }} mdi-fw"
+                     aria-hidden="true"></i>{{ swhid_info.object_type.name.lower }}
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+        <div class="tab-content">
+          {% for swhid_info in swhids_info %}
+            <div class="tab-pane {% if forloop.first %}active{% endif %}"
+                 id="citation-tab-{{ swhid_info.object_type.name.lower }}">
+              <div class="card">
+                <div class="card-body citation-ui">
+                  <div id="citation-options-{{ swhid_info.object_type.name.lower }}"
+                       class="row g-3 mb-2"
+                       aria-label="Options for {{ swhid_info.object_type.name.lower }} citation">
+                    <div class="citation-format input-group input-group-sm col">
+                      <label class="input-group-text"
+                             for="citation-format-option-{{ swhid_info.object_type.name.lower }}">
+                        Format
+                      </label>
+                      <select class="form-select form-control citation-format-option"
+                              id="citation-format-option-{{ swhid_info.object_type.name.lower }}"
+                              disabled>
+                        <option>BibTeX</option>
+                      </select>
+                    </div>
+                    <span class="col pt-1"
+                          id="citation-format-description-{{ swhid_info.object_type.name.lower }}">
+                      Generate software citation in BibTex format (requires
+                      <a href="https://ctan.mines-albi.fr/macros/latex/contrib/biblatex-contrib/biblatex-software/software-biblatex.pdf"
+                         target="_blank"
+                         rel="noopener noreferrer">biblatex-software</a> package)
+                    </span>
+                  </div>
+                  <pre class="swh-citation">Generating citation ...</pre>
+                  <div id="citation-source-{{ swhid_info.object_type.name.lower }}"
+                       class="float-start"></div>
+                  <div id="citation-copy-button-{{ swhid_info.object_type.name.lower }}"
+                       class="float-end">
+                    <button type="button"
+                            class="btn btn-secondary btn-sm btn-citation-copy"
+                            title="Copy citation to clipboard"
+                            disabled>
+                      <i class="mdi mdi-content-copy mdi-fw" aria-hidden="true"></i>Copy citation
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+  <script>
+    swh.webapp.setSwhIdsContext({{ swhids_info|jsonify }});
+    swh.browse.initSideTabs();
+  </script>
+{% endif %}

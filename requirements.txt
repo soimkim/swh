@@ -1,0 +1,33 @@
+# Add here external Python modules dependencies, one per line. Module names
+# should match https://pypi.python.org/pypi names. For the full spec or
+# dependency lines, see https://pip.readthedocs.org/en/1.1/requirements.html
+
+chardet
+charset-normalizer >= 3.4.3
+cryptography
+disposable-email-domains
+django
+django-admin-logs
+django-bootstrap5
+django-cors-headers
+django-js-reverse
+django-minify-html
+django-ratelimit
+djangorestframework
+django-webpack-loader >= 3
+docutils
+iso8601
+looseversion
+msgpack
+prometheus-client
+psycopg
+pybadges >= 2.2.1
+pygments
+pymemcache
+python-magic >= 0.4.0
+pyyaml
+requests
+rfc3987
+sentry-sdk
+# for pybadges still using the imghdr module removed in Python 3.13
+standard-imghdr ; python_version > "3.12"

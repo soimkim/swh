@@ -1,0 +1,196 @@
+{% comment %}
+Copyright (C) 2015-2025  The Software Heritage developers
+See the AUTHORS file at the top-level directory of this distribution
+License: GNU Affero General Public License version 3, or any later version
+See top-level LICENSE file for more information
+{% endcomment %}
+
+{% load js_reverse %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+{% load swh_templatetags %}
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>
+      {% block title %}
+        {% block page_title %}
+        {% endblock page_title %}
+
+        &ndash;
+        {% if not SWH_MIRROR_CONFIG %}
+          Software Heritage archive
+        {% else %}
+          {{ SWH_MIRROR_CONFIG.partner_name }} Mirror of the Software Heritage archive
+        {% endif %}
+      {% endblock title %}
+
+    </title>
+    {% render_bundle 'vendors' %}
+    {% render_bundle 'webapp' %}
+    {% render_bundle 'guided_tour' %}
+    <script>
+/*
+@licstart  The following is the entire license notice for the JavaScript code in this page.
+
+Copyright (C) 2015-2025  The Software Heritage developers
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses />.
+
+@licend  The above is the entire license notice for the JavaScript code in this page.
+*/
+    </script>
+    <script>SWH_CONFIG = {{swh_client_config|jsonify}};</script>
+    <script src="{% url 'js-reverse' %}" type="text/javascript"></script>
+    <script>swh.webapp.setSwhObjectIcons({{ swh_object_icons|jsonify }});</script>
+    {{ request.user.is_authenticated|json_script:"swh_user_logged_in" }}
+    {{ request.user.is_staff|json_script:"swh_user_is_staff" }}
+    {{ user_is_ambassador|json_script:"swh_user_is_ambassador" }}
+    {{ SWH_MIRROR_CONFIG|json_script:"swh_mirror_config" }}
+    {% include "includes/favicon.html" %}
+    {% block header %}
+    {% endblock header %}
+
+    {% if "url" in matomo and "site_id" in matomo %}
+      <!-- Matomo -->
+      <script type="text/javascript">
+        var _paq = window._paq = window._paq || [];
+        _paq.push(['trackPageView']);
+        (function() {
+          var u='{{ matomo.url }}';
+          _paq.push(['setTrackerUrl', u+'matomo.php']);
+          _paq.push(['setSiteId', '{{ matomo.site_id }}']);
+          var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+          g.type='text/javascript'; g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+        })();
+      </script>
+      <!-- End Matomo Code -->
+    {% endif %}
+    {% comment %}
+    Handle browsers with JavaScript disabled: if the html element has a `no-js` class
+    it means that JS is disabled. Use noscript tags to provide alternative ways of
+    accessing the information or interacting with the app.
+    Hide elements that don't belong in a JS-free context (e.g. modal buttons) with the
+    `js-only` class.
+    {% endcomment %}
+
+    <script>document.documentElement.classList.remove('no-js');</script>
+    <style>.no-js .js-only { display: none !important;}</style>
+  </head>
+  <body class="layout-fixed sidebar-expand-lg sidebar-mini {% if sidebar_state == 'expanded' %} sidebar-open {% else %} sidebar-collapse {% endif %}">
+    <a id="top"></a>
+    <div class="app-wrapper link-opacity-75">
+      <header class="app-header navbar navbar-expand-lg navbar-light navbar-static-top swh-navbar {% if 'swh.web.banners' in SWH_DJANGO_APPS %}swh-navbar-banner{% endif %}"
+              aria-label="Top bar">
+        {% include "./includes/top-bar.html" %}
+        {% if "swh.web.banners" in SWH_DJANGO_APPS %}
+          <div class="swh-banner">{% include "downtime-banner.html" %}</div>
+        {% endif %}
+        <ul class="navbar-nav flex-row" role="list">
+          <li class="nav-item">
+            <a class="nav-link swh-push-menu"
+               data-lte-toggle="sidebar"
+               role="button"
+               aria-label="Collapse sidebar"
+               aria-expanded="true"
+               href="#">
+              <i class="mdi mdi-24px mdi-menu mdi-fw" aria-hidden="true"></i>
+            </a>
+          </li>
+          <li class="nav-item" style="width: 94%;">
+            <div class="swh-navbar-content">
+              {% block navbar-content %}
+              {% endblock navbar-content %}
+
+              {% if "partner_logo_static_path" in SWH_MIRROR_CONFIG %}
+                {% with SWH_MIRROR_CONFIG.partner_logo_static_path as mirror_partner_logo %}
+                  {% if "partner_url" in SWH_MIRROR_CONFIG %}
+                    <a href="{{ SWH_MIRROR_CONFIG.partner_url }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="d-none d-lg-block">
+                    {% endif %}
+                    {% if request.resolver_match.url_name != 'swh-web-homepage' and request.resolver_match.url_name != 'browse-search' %}
+                      <img class="swh-mirror-partner-logo"
+                           src="{% static mirror_partner_logo %}"
+                           alt="swh mirror partner logo" />
+                    {% else %}
+                      <img class="swh-mirror-partner-logo swh-mirror-partner-logo-no-search"
+                           src="{% static mirror_partner_logo %}"
+                           alt="swh mirror partner logo" />
+                    {% endif %}
+                    {% if "partner_url" in SWH_MIRROR_CONFIG %}</a>{% endif %}
+                {% endwith %}
+              {% endif %}
+              {% if request.resolver_match.url_name != 'swh-web-homepage' and request.resolver_match.url_name != 'browse-search' %}
+                <form class="form-horizontal d-none d-md-flex input-group swh-search-navbar needs-validation"
+                      id="swh-origins-search-top">
+                  <input class="form-control"
+                         placeholder="Enter a SWHID to resolve or keyword(s) to search for in origin URLs"
+                         type="text"
+                         id="swh-origins-search-top-input"
+                         oninput="swh.webapp.validateSWHIDInput(this)"
+                         required />
+                  <button class="btn btn-primary"
+                          id="swh-origins-search-submit"
+                          type="submit"
+                          aria-label="Search software origins">
+                    <i class="swh-search-icon mdi mdi-24px mdi-magnify" aria-hidden="true"></i>
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+          </li>
+        </ul>
+      </header>
+      {% include "./includes/sidebar.html" %}
+      <main class="app-main">
+        <div class="app-content">
+          <div class="container" id="swh-web-content">
+            {% if show_corner_ribbon %}
+              <div class="swh-corner-ribbon {% if 'swh.web.banners' in SWH_DJANGO_APPS %}swh-corner-ribbon-banner{% endif %}">
+                {{ corner_ribbon_text }}
+                <br />
+                v{{ swh_web_version|split:"+"|first }}
+              </div>
+            {% endif %}
+            {% block content %}
+            {% endblock content %}
+
+          </div>
+        </div>
+        {% include "includes/global-modals.html" %}
+        <div id="back-to-top">
+          <a href="#top">
+            <img alt="back to top" src="{% static 'img/arrow-up-small.png' %}" />
+          </a>
+        </div>
+      </main>
+      {% include "./includes/footer.html" %}
+    </div>
+    <script>
+      swh.webapp.setContainerFullWidth();
+      {% if "server_url" in status and "json_path" in status %}
+        var statusServerURL = {{ status.server_url|jsonify }};
+        var statusJsonPath = {{ status.json_path|jsonify }};
+        swh.webapp.initStatusWidget(statusServerURL + statusJsonPath);
+      {% endif %}
+    </script>
+  </body>
+</html>

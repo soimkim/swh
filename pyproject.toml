@@ -1,0 +1,124 @@
+[project]
+name = "swh.web"
+authors = [
+    { name = "Software Heritage developers", email = "swh-devel@inria.fr" },
+]
+
+description = "Software Heritage web UI"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Django",
+]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[tool.setuptools.packages.find]
+include = ["swh.*"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt", "requirements-swh.txt"] }
+
+[tool.setuptools.dynamic.optional-dependencies]
+testing = { file = ["requirements-test.txt"] }
+
+[project.urls]
+"Homepage" = "https://gitlab.softwareheritage.org/swh/devel/swh-web"
+"Bug Reports" = "https://gitlab.softwareheritage.org/swh/devel/swh-web/-/issues"
+"Funding" = "https://www.softwareheritage.org/donate"
+"Documentation" = "https://docs.softwareheritage.org/devel/swh-web/"
+"Source" = "https://gitlab.softwareheritage.org/swh/devel/swh-web.git"
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+fallback_version = "0.0.1"
+
+[tool.black]
+target-version = ['py310', 'py311', 'py312']
+exclude = 'swh/web/tests/resources/contents'
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+force_sort_within_sections = true
+known_first_party = ['swh']
+known_django = 'django,rest_framework'
+sections = 'FUTURE,STDLIB,THIRDPARTY,DJANGO,FIRSTPARTY,LOCALFOLDER'
+
+[tool.djlint]
+# https://www.djlint.com/docs/linter/#rules
+ignore = "H006,H020,H021,H023,H029,H030,H031"
+indent = 2
+blank_line_after_tag = "endcomment,extends,load,endblock"
+max_line_length = 100
+
+[tool.pytest.ini_options]
+addopts = """
+    -p no:flask
+    -p no:pytest_swh_storage
+    -p swh.web.tests.pytest_plugin
+    --ignore-glob=*random_fixtures_test.py
+    --ignore-glob=*create_test_*.py
+    --strict-markers
+"""
+norecursedirs = "build docs node_modules resources .tox"
+DJANGO_SETTINGS_MODULE = "swh.web.settings.tests"
+filterwarnings = """
+    ignore:.*Plural value must be an integer, got float
+    ignore:.*Using or importing the ABCs from 'collections'
+    ignore:.*uses the.*fixture, which is reset between function calls
+    ignore:.*'U' mode is deprecated
+    ignore:.*FORMS_URLFIELD_ASSUME_HTTPS transitional setting is deprecated.
+"""
+consider_namespace_packages = true
+markers = """
+    inbound_message: used to pass a message parameter to the inbound_message fixture
+"""
+
+[tool.django-stubs]
+django_settings_module = "swh.web.settings.development"
+
+[tool.mypy]
+namespace_packages = true
+warn_unused_ignores = true
+explicit_package_bases = true
+# ^ Needed for mypy to detect py.typed from swh packages installed
+# in editable mode
+
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main"
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "django_js_reverse.*",
+    "django_ratelimit.*",
+    "pymemcache.*",
+    "django_bootstrap5.*",
+    "rfc3987.*"
+]
+ignore_missing_imports = true
+
+[tool.flake8]
+select = ["C", "E", "F", "W", "B950"]
+ignore = [
+    "E203", # whitespaces before ':' <https://github.com/psf/black/issues/315>
+    "E231", # missing whitespace after ','
+    "E501", # line too long, use B950 warning from flake8-bugbear instead
+    "E704", # multiple statements on one line
+    "W503" # line break before binary operator <https://github.com/psf/black/issues/52>
+]
+max-line-length = 88
+extend-exclude = ["build/"]

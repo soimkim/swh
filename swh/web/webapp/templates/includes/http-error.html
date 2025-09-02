@@ -1,0 +1,16 @@
+{% extends "./error-base.html" %}
+
+{% comment %}
+Copyright (C) 2018-2024  The Software Heritage developers
+See the AUTHORS file at the top-level directory of this distribution
+License: GNU Affero General Public License version 3, or any later version
+See top-level LICENSE file for more information
+{% endcomment %}
+
+{% load static %}
+
+{% block error-description %}
+  <div class="swh-http-error-desc">
+    <pre>{{ error_description }}</pre>
+  </div>
+{% endblock error-description %}

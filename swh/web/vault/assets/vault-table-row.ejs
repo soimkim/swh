@@ -1,0 +1,57 @@
+<%#
+  Copyright (C) 2020  The Software Heritage developers
+  See the AUTHORS file at the top-level directory of this distribution
+  License: GNU Affero General Public License version 3, or any later version
+  See top-level LICENSE file for more information
+%>
+
+<% if (cookingTask.swhid.match(/^swh:1:dir:.*/)) { %>
+  <tr id="vault-task-<%= cookingTask.swhid %>"
+      title="Once downloaded, the directory can be extracted with the following command:
+
+$ tar xvzf <%= cookingTask.swhid.replaceAll(':', '_') %>.tar.gz">
+<% } else { %>
+  <tr id="vault-task-<%= cookingTask.swhid %>"
+      title="Once downloaded, the git repository can be imported to a 'new_repository' directory with the following commands:
+
+$ tar xvf <%= cookingTask.swhid.replaceAll(':', '_') %>.git.tar
+$ git clone <%= cookingTask.swhid %>.git new_repository
+$ cd new_repository/">
+<% } %>
+    <td>
+      <div class="form-check">
+      <input type="checkbox" class="form-check-input vault-task-toggle-selection"
+             id="vault-task-toggle-selection-<%= cookingTask.swhid %>"/>
+      <label class="form-check-label"
+             for="vault-task-toggle-selection-<%= cookingTask.swhid %>">
+      </label>
+    </td>
+    <% if (cookingTask.origin) { %>
+      <td class="vault-origin">
+        <a href="<%= Urls.browse_origin() %>?origin_url=<%= cookingTask.origin %>">
+          <%= decodeURIComponent(cookingTask.origin) %>
+        </a>
+      </td>
+    <% } else { %>
+      <td class="vault-origin">unknown</td>
+    <% } %>
+    <td>
+      <i class="<%= swh.webapp.getSwhObjectIcon(cookingTask.swhid.match(/swh:1:([a-z]+):/)[1]) %> mdi-fw"></i>
+      <%= cookingTask.bundle_type %>
+    </td>
+    <td class="vault-object-info" data-swhid="<%= cookingTask.swhid %>">
+      <b>id:</b>&nbsp;<a href="<%= browseUrl %>"><%= cookingTask.swhid %></a>
+      <% if (cookingTask.path) { %>
+        <br/><b>path:</b>&nbsp;<%= cookingTask.path %>
+      <% } %>
+    </td>
+    <td><%- progressBar.outerHTML %></td>
+    <td class="vault-dl-link">
+      <% if (cookingTask.status === 'done') { %>
+        <button class="btn btn-secondary btn-sm"
+                onclick="swh.vault.fetchCookedObject('<%= cookingTask.fetch_url %>')">
+          <i class="mdi mdi-download mdi-fw" aria-hidden="true"></i>Download
+        </button>
+      <% } %>
+    </td>
+  </tr>

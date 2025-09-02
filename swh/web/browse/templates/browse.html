@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% comment %}
+Copyright (C) 2017-2023  The Software Heritage developers
+See the AUTHORS file at the top-level directory of this distribution
+License: GNU Affero General Public License version 3, or any later version
+See top-level LICENSE file for more information
+{% endcomment %}
+
+{% load swh_templatetags %}
+{% load render_bundle from webpack_loader %}
+
+{% block page_title %}
+  {{ heading }}
+{% endblock page_title %}
+
+{% block header %}
+  {% render_bundle 'badges' %}
+  {% render_bundle 'browse' %}
+  {% if "swh.web.vault" in SWH_DJANGO_APPS %}
+    {% render_bundle 'vault' %}
+  {% endif %}
+  {% if "swh.web.save_code_now" in SWH_DJANGO_APPS %}
+    {% render_bundle 'save_code_now' %}
+  {% endif %}
+{% endblock header %}
+
+{% block navbar-content %}
+  <h4>Browse the archive</h4>
+{% endblock navbar-content %}
+
+{% block content %}
+  {% block browse-content %}
+    {% block swh-browse-before-content %}
+      {% if snapshot_context %}
+        {% include "./includes/snapshot-context.html" %}
+      {% endif %}
+    {% endblock swh-browse-before-content %}
+
+    {% block swh-browse-content %}
+    {% endblock swh-browse-content %}
+
+    {% block swh-browse-after-content %}
+    {% endblock swh-browse-after-content %}
+
+    <script>swh.webapp.initPage('browse');</script>
+  {% endblock browse-content %}
+{% endblock content %}

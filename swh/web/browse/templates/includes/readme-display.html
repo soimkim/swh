@@ -1,0 +1,37 @@
+{% comment %}
+Copyright (C) 2017-2024  The Software Heritage developers
+See the AUTHORS file at the top-level directory of this distribution
+License: GNU Affero General Public License version 3, or any later version
+See top-level LICENSE file for more information
+{% endcomment %}
+
+{% load static %}
+{% load swh_templatetags %}
+
+{% if readme_name %}
+  <div id="readme-panel" class="card">
+    <div class="card-header swh-background-gray">
+      <h4>{{ readme_name }}</h4>
+    </div>
+    <div class="swh-readme card-body">
+      <div class="text-center">
+        <img src="{% static 'img/swh-spinner.gif' %}" alt="swh spinner" />
+        <p>Loading {{ readme_name }} ...</p>
+      </div>
+    </div>
+  </div>
+  {% if readme_html %}
+    <script>
+      $('.swh-readme').html(swh.webapp.filterXSS({{ readme_html|jsonify }}));
+      swh.webapp.addReadmeHeadingAnchors();
+    </script>
+  {% elif readme_url is None %}
+    <script>$('.swh-readme').text("Readme bytes are not available");</script>
+  {% elif readme_name.lower == 'readme' or readme_name.lower == 'readme.txt' %}
+    <script>swh.webapp.renderTxt('.swh-readme', '{{ readme_url }}');</script>
+  {% elif readme_name.lower == 'readme.org' %}
+    <script>swh.webapp.renderOrg('.swh-readme', '{{ readme_url }}');</script>
+  {% else %}
+    <script>swh.webapp.renderMarkdown('.swh-readme', '{{ readme_url }}');</script>
+  {% endif %}
+{% endif %}
