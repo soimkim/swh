@@ -10,7 +10,7 @@ from swh.model.exceptions import ValidationError
 from swh.model.hashutil import hash_to_bytes, hash_to_hex
 from swh.model.swhids import CoreSWHID, ObjectType, QualifiedSWHID
 from swh.web.utils import archive, reverse
-from swh.web.utils.exc import BadInputExc
+from swh.web.utils.exc import BadInputExc, NotFoundExc
 from swh.web.utils.typing import SnapshotContext, SWHIDContext, SWHIDInfo, SWHObjectInfo
 
 
@@ -105,8 +105,16 @@ def resolve_swhid(
 
     if swhid_parsed.origin:
         origin_url = unquote(swhid_parsed.origin)
-        origin_url = archive.lookup_origin(origin_url)["url"]
-        query_dict["origin_url"] = origin_url
+        try:
+            origin_url = archive.lookup_origin(origin_url)["url"]
+            query_dict["origin_url"] = origin_url
+        except NotFoundExc:
+            # If origin is not found in archive, use the original origin URL from SWHID
+            # This can happen if the origin was referenced in SWHID but not yet archived
+            query_dict["origin_url"] = origin_url
+        except Exception:
+            # For any other exception, use the original origin URL
+            query_dict["origin_url"] = origin_url
 
     if swhid_parsed.path and swhid_parsed.path != b"/":
         query_dict["path"] = swhid_parsed.path.decode("utf8", errors="replace")

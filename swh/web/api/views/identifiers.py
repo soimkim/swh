@@ -112,7 +112,7 @@ def api_resolve_swhid(request: Request, swhid: str):
         "object_id": object_id,
         "metadata": swhid_parsed.qualifiers(),
         "browse_url": request.build_absolute_uri(swhid_resolved["browse_url"]),
-        "origin_url": origin_url,
+        "origin_url": origin_url if origin_url is not None else "",  # Always include origin_url
     }
 
 
