@@ -168,7 +168,7 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
         from swh.web.utils import config
         indexer_storage = config.indexer_storage()
         
-        # Search for content in origin intrinsic metadata
+        # Method 1: Search for content in origin intrinsic metadata
         try:
             content_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
                 conjunction=[f"content:{content_id}"], limit=1
@@ -177,6 +177,38 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
                 origin_id = content_origins[0].id
                 origin_info = archive.lookup_origin(origin_id)
                 return origin_info["url"]
+        except Exception:
+            pass
+        
+        # Method 2: Try searching with different patterns
+        try:
+            # Search for content hash in metadata
+            content_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
+                conjunction=[content_id], limit=5
+            )
+            for origin_meta in content_origins:
+                try:
+                    origin_id = origin_meta.id
+                    origin_info = archive.lookup_origin(origin_id)
+                    return origin_info["url"]
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        
+        # Method 3: Try to find through search API
+        try:
+            from swh.web.utils import config
+            search = config.search()
+            if search:
+                # Search for content in origins
+                search_results = search.origin_search(
+                    metadata_pattern=content_id,
+                    limit=1
+                )
+                if search_results.results:
+                    origin_url = search_results.results[0]["url"]
+                    return origin_url
         except Exception:
             pass
             
