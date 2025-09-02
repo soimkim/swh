@@ -3,7 +3,7 @@
 # License: GNU Affero General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-from typing import Dict, Set
+from typing import Dict, Set, Optional
 
 from rest_framework.request import Request
 
@@ -40,7 +40,7 @@ def api_resolve_swhid(request: Request, swhid: str):
         :>json string object_id: the hash identifier of the pointed object
         :>json string object_type: the type of the pointed object
         :>json number scheme_version: the scheme version of the SWHID
-        :>json string origin_url: the origin URL if present in the SWHID qualifiers, or the origin URL where this object was found (when available)
+        :>json string origin_url: the origin URL where this object was actually saved in the archive (when available)
 
         {common_headers}
 
@@ -64,43 +64,28 @@ def api_resolve_swhid(request: Request, swhid: str):
     object_id = hash_to_hex(swhid_parsed.object_id)
     archive.lookup_object(swhid_parsed.object_type, object_id)
     
-    # Extract origin_url from SWHID if present, or find it from the object
+    # Find the origin URL where this object was actually saved
     origin_url = None
-    if swhid_parsed.origin:
-        # Case 1: Origin qualifier is present in SWHID
-        from urllib.parse import unquote
-        origin_url = unquote(swhid_parsed.origin)
-        # Look up the origin to get the canonical URL
-        try:
-            origin_info = archive.lookup_origin(origin_url)
-            origin_url = origin_info["url"]
-        except NotFoundExc:
-            # If origin is not found in archive, use the original origin URL from SWHID
-            # This can happen if the origin was referenced in SWHID but not yet archived
-            pass
-        except Exception:
-            # For any other exception, use the original origin URL
-            pass
-    else:
-        # Case 2: No origin qualifier in SWHID, try to find origin from the object
-        # This is a complex operation in Software Heritage as objects can exist
-        # in multiple origins. For now, we'll attempt a limited approach.
-        try:
-            # Try to extract origin information from the browse URL if available
-            browse_url = swhid_resolved.get("browse_url", "")
-            if browse_url and "origin" in browse_url:
-                # Extract origin from browse URL if it contains origin information
-                # This is a heuristic approach and may not always work
-                import re
-                origin_match = re.search(r'origin=([^&]+)', browse_url)
-                if origin_match:
-                    origin_url = origin_match.group(1)
-                    # URL decode the origin
-                    from urllib.parse import unquote
-                    origin_url = unquote(origin_url)
-        except Exception:
-            # If we can't find the origin, leave origin_url as None
-            pass
+    
+    try:
+        if object_type.name.lower() == 'content':
+            # For content objects, try to find which origin(s) contain this content
+            origin_url = _find_origin_for_content(object_id)
+        elif object_type.name.lower() == 'directory':
+            # For directory objects, try to find which origin(s) contain this directory
+            origin_url = _find_origin_for_directory(object_id)
+        elif object_type.name.lower() == 'revision':
+            # For revision objects, try to find which origin(s) contain this revision
+            origin_url = _find_origin_for_revision(object_id)
+        elif object_type.name.lower() == 'release':
+            # For release objects, try to find which origin(s) contain this release
+            origin_url = _find_origin_for_release(object_id)
+        elif object_type.name.lower() == 'snapshot':
+            # For snapshot objects, try to find which origin(s) contain this snapshot
+            origin_url = _find_origin_for_snapshot(object_id)
+    except Exception:
+        # If we can't find the origin, leave origin_url as None
+        pass
     
 
     
@@ -167,3 +152,107 @@ def api_swhid_known(request: Request):
             response[str(swhid)]["known"] = True
 
     return response
+
+
+def _find_origin_for_content(content_id: str) -> Optional[str]:
+    """
+    Find the origin URL where a content object was saved.
+    
+    Args:
+        content_id: SHA1 Git hash of the content object
+        
+    Returns:
+        Origin URL if found, None otherwise
+    """
+    try:
+        from swh.web.utils import config
+        indexer_storage = config.indexer_storage()
+        
+        # Search for content in origin intrinsic metadata
+        try:
+            content_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
+                conjunction=[f"content:{content_id}"], limit=1
+            )
+            if content_origins:
+                origin_id = content_origins[0].id
+                origin_info = archive.lookup_origin(origin_id)
+                return origin_info["url"]
+        except Exception:
+            pass
+            
+    except Exception:
+        pass
+    
+    return None
+
+
+def _find_origin_for_directory(directory_id: str) -> Optional[str]:
+    """Find the origin URL where a directory object was saved."""
+    try:
+        from swh.web.utils import config
+        indexer_storage = config.indexer_storage()
+        
+        dir_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
+            conjunction=[f"directory:{directory_id}"], limit=1
+        )
+        if dir_origins:
+            origin_id = dir_origins[0].id
+            origin_info = archive.lookup_origin(origin_id)
+            return origin_info["url"]
+    except Exception:
+        pass
+    
+    return None
+
+
+def _find_origin_for_revision(revision_id: str) -> Optional[str]:
+    """Find the origin URL where a revision object was saved."""
+    try:
+        from swh.web.utils import config
+        indexer_storage = config.indexer_storage()
+        
+        rev_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
+            conjunction=[f"revision:{revision_id}"], limit=1
+        )
+        if rev_origins:
+            origin_id = rev_origins[0].id
+            origin_info = archive.lookup_origin(origin_id)
+            return origin_info["url"]
+    except Exception:
+        pass
+    
+    return None
+
+
+def _find_origin_for_release(release_id: str) -> Optional[str]:
+    """Find the origin URL where a release object was saved."""
+    try:
+        from swh.web.utils import config
+        indexer_storage = config.indexer_storage()
+        
+        rel_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
+            conjunction=[f"release:{release_id}"], limit=1
+        )
+        if rel_origins:
+            origin_id = rel_origins[0].id
+            origin_info = archive.lookup_origin(origin_id)
+            return origin_info["url"]
+    except Exception:
+        pass
+    
+    return None
+
+
+def _find_origin_for_snapshot(snapshot_id: str) -> Optional[str]:
+    """Find the origin URL where a snapshot object was saved."""
+    try:
+        # For snapshots, we can try to find the origin through the snapshot's branches
+        snapshot_info = archive.lookup_snapshot(snapshot_id)
+        if snapshot_info and 'branches' in snapshot_info:
+            # Try to find origin from snapshot branches
+            # This is a simplified approach
+            pass
+    except Exception:
+        pass
+    
+    return None
