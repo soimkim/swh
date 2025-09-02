@@ -40,7 +40,7 @@ def api_resolve_swhid(request: Request, swhid: str):
         :>json string object_id: the hash identifier of the pointed object
         :>json string object_type: the type of the pointed object
         :>json number scheme_version: the scheme version of the SWHID
-        :>json string origin_url: the origin URL if present in the SWHID qualifiers
+        :>json string origin_url: the origin URL if present in the SWHID qualifiers, or the origin URL where this object was found (when available)
 
         {common_headers}
 
@@ -64,9 +64,10 @@ def api_resolve_swhid(request: Request, swhid: str):
     object_id = hash_to_hex(swhid_parsed.object_id)
     archive.lookup_object(swhid_parsed.object_type, object_id)
     
-    # Extract origin_url from SWHID if present
+    # Extract origin_url from SWHID if present, or find it from the object
     origin_url = None
     if swhid_parsed.origin:
+        # Case 1: Origin qualifier is present in SWHID
         from urllib.parse import unquote
         origin_url = unquote(swhid_parsed.origin)
         # Look up the origin to get the canonical URL
@@ -80,6 +81,28 @@ def api_resolve_swhid(request: Request, swhid: str):
         except Exception:
             # For any other exception, use the original origin URL
             pass
+    else:
+        # Case 2: No origin qualifier in SWHID, try to find origin from the object
+        # This is a complex operation in Software Heritage as objects can exist
+        # in multiple origins. For now, we'll attempt a limited approach.
+        try:
+            # Try to extract origin information from the browse URL if available
+            browse_url = swhid_resolved.get("browse_url", "")
+            if browse_url and "origin" in browse_url:
+                # Extract origin from browse URL if it contains origin information
+                # This is a heuristic approach and may not always work
+                import re
+                origin_match = re.search(r'origin=([^&]+)', browse_url)
+                if origin_match:
+                    origin_url = origin_match.group(1)
+                    # URL decode the origin
+                    from urllib.parse import unquote
+                    origin_url = unquote(origin_url)
+        except Exception:
+            # If we can't find the origin, leave origin_url as None
+            pass
+    
+
     
     # id is well-formed and the pointed object exists
     return {
