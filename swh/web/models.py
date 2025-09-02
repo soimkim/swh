@@ -17,7 +17,7 @@ class ContentOriginMapping(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text="When this mapping was created")
     
     class Meta:
-        app_label = "swh_web"
+        app_label = "swh_web_save_code_now"
         db_table = "content_origin_mapping"
         indexes = [
             models.Index(fields=["content_sha1_git"]),
