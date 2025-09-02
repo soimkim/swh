@@ -406,14 +406,11 @@ def _update_save_request_info(
             must_save = True
             save_request.visit_status = visit_status
 
-        if (
-            loading_task_status is not None
-            and loading_task_status != save_request.loading_task_status
-        ):
+        if loading_task_status is not None:
             must_save = True
             save_request.loading_task_status = loading_task_status
             
-            # Create content-origin mappings when task succeeds
+            # Create content-origin mappings when task succeeds (always attempt, no status change check)
             if loading_task_status == SAVE_TASK_SUCCEEDED:
                 try:
                     # Get snapshot ID from visit info
@@ -423,7 +420,7 @@ def _update_save_request_info(
                         logger.info(f"Created content-origin mappings for succeeded task from origin: {save_request.origin_url}")
                 except Exception as e:
                     logger.warning(f"Failed to create content-origin mappings for succeeded task: {e}")
-
+ㅂ
     # Try to get snapshot identifier associated to the save request
     if (
         save_request.visit_status in (VISIT_STATUS_PARTIAL, VISIT_STATUS_FULL)
@@ -963,6 +960,13 @@ def _create_content_origin_mappings(snapshot_id: str, origin_url: str) -> None:
     try:
         import requests
         from swh.model.hashutil import hash_to_bytes, hash_to_hex
+        from swh.web.models import ContentOriginMapping
+        
+        # Check if mappings already exist for this origin
+        existing_count = ContentOriginMapping.objects.filter(origin_url=origin_url).count()
+        if existing_count > 0:
+            logger.info(f"Content-origin mappings already exist for origin: {origin_url} ({existing_count} mappings)")
+            return
         
         # Get snapshot information
         response = requests.get(f"http://localhost:5004/api/1/snapshot/{snapshot_id}/")
