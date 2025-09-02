@@ -420,7 +420,7 @@ def _update_save_request_info(
                         logger.info(f"Created content-origin mappings for succeeded task from origin: {save_request.origin_url}")
                 except Exception as e:
                     logger.warning(f"Failed to create content-origin mappings for succeeded task: {e}")
-ㅂ
+
     # Try to get snapshot identifier associated to the save request
     if (
         save_request.visit_status in (VISIT_STATUS_PARTIAL, VISIT_STATUS_FULL)
