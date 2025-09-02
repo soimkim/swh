@@ -759,6 +759,20 @@ def get_save_origin_requests_to_update(origin_url: Optional[str] = None) -> Quer
     return save_requests
 
 
+def get_save_origin_requests_for_mapping() -> QuerySet:
+    """Get save origin requests that need content-origin mapping creation.
+    
+    This includes succeeded requests that may not have mappings yet.
+    """
+    pivot_date = datetime.now(tz=timezone.utc) - timedelta(days=MAX_THRESHOLD_DAYS)
+    save_requests = SaveOriginRequest.objects.filter(
+        Q(status=SAVE_REQUEST_ACCEPTED),
+        Q(loading_task_status=SAVE_TASK_SUCCEEDED),
+        Q(request_date__gte=pivot_date),
+    )
+    return save_requests
+
+
 def refresh_save_origin_request_statuses() -> List[SaveOriginRequestInfo]:
     """Refresh non-terminal save origin requests (SOR) in the backend.
 
@@ -771,10 +785,15 @@ def refresh_save_origin_request_statuses() -> List[SaveOriginRequestInfo]:
     Finally, this returns the refreshed information on those save requests.
     """
     save_requests = get_save_origin_requests_to_update()
+    
+    # Also process succeeded requests for mapping creation
+    succeeded_requests = get_save_origin_requests_for_mapping()
+    
+    all_requests = save_requests.union(succeeded_requests)
 
     return (
-        update_save_origin_requests_from_queryset(save_requests)
-        if save_requests.count() > 0
+        update_save_origin_requests_from_queryset(all_requests)
+        if all_requests.count() > 0
         else []
     )
 
