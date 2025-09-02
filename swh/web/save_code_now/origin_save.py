@@ -432,6 +432,22 @@ def _update_save_request_info(
             else ""
         )
         must_save = True
+        
+        # Create content-origin mappings when visit is successful
+        if snapshot_id:
+            try:
+                # Get all content from the snapshot and create mappings
+                from swh.web.utils import config
+                storage = config.storage()
+                snapshot = storage.snapshot_get(hash_to_bytes(snapshot_id))
+                if snapshot:
+                    # Create mapping for the origin URL
+                    # Note: This creates a general mapping for the origin
+                    # Individual content mappings would need to be created by the loader
+                    save_content_origin_mapping("snapshot_" + snapshot_id, save_request.origin_url)
+                    logger.info(f"Created content-origin mapping for snapshot {snapshot_id} from origin: {save_request.origin_url}")
+            except Exception as e:
+                logger.warning(f"Failed to create content-origin mapping for snapshot: {e}")
 
     if must_save:
         save_request.save()
@@ -664,6 +680,18 @@ def create_save_origin_request(
         )
 
     assert sor is not None
+    
+    # Save content-origin mapping when save request is accepted
+    if save_request_status == SAVE_REQUEST_ACCEPTED and task:
+        try:
+            # Create a mapping for the origin URL
+            # Note: This is a placeholder - actual content mapping will be created
+            # when content is actually loaded by the scheduler task
+            save_content_origin_mapping("placeholder", origin_url)
+            logger.info(f"Created content-origin mapping for origin: {origin_url}")
+        except Exception as e:
+            logger.warning(f"Failed to create content-origin mapping: {e}")
+    
     return _update_save_request_info(sor, task)
 
 
