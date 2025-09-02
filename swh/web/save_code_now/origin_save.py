@@ -6,6 +6,7 @@
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 import logging
+import os
 from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import quote, urlparse
 
@@ -986,8 +987,11 @@ def _create_content_origin_mappings(snapshot_id: str, origin_url: str) -> None:
             logger.info(f"Content-origin mappings already exist for origin: {origin_url} ({existing_count} mappings)")
             return
         
+        # Get API base URL from environment or use default
+        api_base_url = os.environ.get('SWH_API_BASE_URL', 'http://localhost')
+        
         # Get snapshot information
-        response = requests.get(f"http://localhost:5004/api/1/snapshot/{snapshot_id}/")
+        response = requests.get(f"{api_base_url}/api/1/snapshot/{snapshot_id}/")
         if response.status_code != 200:
             logger.warning(f"Failed to get snapshot {snapshot_id}")
             return
@@ -1003,13 +1007,13 @@ def _create_content_origin_mappings(snapshot_id: str, origin_url: str) -> None:
             revision_id = main_branch.get('target')
             
             # Get revision information
-            rev_response = requests.get(f"http://localhost:5004/api/1/revision/{revision_id}/")
+            rev_response = requests.get(f"{api_base_url}/api/1/revision/{revision_id}/")
             if rev_response.status_code == 200:
                 rev_data = rev_response.json()
                 directory_id = rev_data.get('directory')
                 
                 # Get directory information
-                dir_response = requests.get(f"http://localhost:5004/api/1/directory/{directory_id}/")
+                dir_response = requests.get(f"{api_base_url}/api/1/directory/{directory_id}/")
                 if dir_response.status_code == 200:
                     dir_data = dir_response.json()
                     
