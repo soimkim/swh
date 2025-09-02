@@ -67,25 +67,39 @@ def api_resolve_swhid(request: Request, swhid: str):
     # Find the origin URL where this object was actually saved
     origin_url = None
     
+    # First, try to extract origin from browse URL if available
     try:
-        if object_type.name.lower() == 'content':
-            # For content objects, try to find which origin(s) contain this content
-            origin_url = _find_origin_for_content(object_id)
-        elif object_type.name.lower() == 'directory':
-            # For directory objects, try to find which origin(s) contain this directory
-            origin_url = _find_origin_for_directory(object_id)
-        elif object_type.name.lower() == 'revision':
-            # For revision objects, try to find which origin(s) contain this revision
-            origin_url = _find_origin_for_revision(object_id)
-        elif object_type.name.lower() == 'release':
-            # For release objects, try to find which origin(s) contain this release
-            origin_url = _find_origin_for_release(object_id)
-        elif object_type.name.lower() == 'snapshot':
-            # For snapshot objects, try to find which origin(s) contain this snapshot
-            origin_url = _find_origin_for_snapshot(object_id)
+        browse_url = swhid_resolved.get("browse_url", "")
+        if browse_url and "origin_url=" in browse_url:
+            import re
+            from urllib.parse import unquote
+            origin_match = re.search(r'origin_url=([^&]+)', browse_url)
+            if origin_match:
+                origin_url = unquote(origin_match.group(1))
     except Exception:
-        # If we can't find the origin, leave origin_url as None
         pass
+    
+    # If not found in browse URL, try to find through database search
+    if not origin_url:
+        try:
+            if object_type.name.lower() == 'content':
+                # For content objects, try to find which origin(s) contain this content
+                origin_url = _find_origin_for_content(object_id)
+            elif object_type.name.lower() == 'directory':
+                # For directory objects, try to find which origin(s) contain this directory
+                origin_url = _find_origin_for_directory(object_id)
+            elif object_type.name.lower() == 'revision':
+                # For revision objects, try to find which origin(s) contain this revision
+                origin_url = _find_origin_for_revision(object_id)
+            elif object_type.name.lower() == 'release':
+                # For release objects, try to find which origin(s) contain this release
+                origin_url = _find_origin_for_release(object_id)
+            elif object_type.name.lower() == 'snapshot':
+                # For snapshot objects, try to find which origin(s) contain this snapshot
+                origin_url = _find_origin_for_snapshot(object_id)
+        except Exception:
+            # If we can't find the origin, leave origin_url as None
+            pass
     
 
     
@@ -165,10 +179,17 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
         Origin URL if found, None otherwise
     """
     try:
+        # Method 1: Use our custom content-origin mapping table
+        from swh.web.utils.content_origin import get_origin_for_content
+        origin_url = get_origin_for_content(content_id)
+        if origin_url:
+            return origin_url
+        
+        # Method 2: Fallback to original methods
         from swh.web.utils import config
         indexer_storage = config.indexer_storage()
         
-        # Method 1: Search for content in origin intrinsic metadata
+        # Search for content in origin intrinsic metadata
         try:
             content_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
                 conjunction=[f"content:{content_id}"], limit=1
@@ -180,9 +201,8 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
         except Exception:
             pass
         
-        # Method 2: Try searching with different patterns
+        # Try searching with different patterns
         try:
-            # Search for content hash in metadata
             content_origins = indexer_storage.origin_intrinsic_metadata_search_fulltext(
                 conjunction=[content_id], limit=5
             )
@@ -196,12 +216,10 @@ def _find_origin_for_content(content_id: str) -> Optional[str]:
         except Exception:
             pass
         
-        # Method 3: Try to find through search API
+        # Try to find through search API
         try:
-            from swh.web.utils import config
             search = config.search()
             if search:
-                # Search for content in origins
                 search_results = search.origin_search(
                     metadata_pattern=content_id,
                     limit=1

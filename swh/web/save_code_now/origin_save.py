@@ -41,6 +41,7 @@ from swh.web.save_code_now.models import (
 from swh.web.utils import archive, parse_iso8601_date_to_utc
 from swh.web.utils.exc import BadInputExc, ForbiddenExc, NotFoundExc
 from swh.web.utils.typing import OriginExistenceCheckInfo, SaveOriginRequestInfo
+from swh.web.utils.content_origin import save_content_origin_mapping
 
 logger = logging.getLogger(__name__)
 
