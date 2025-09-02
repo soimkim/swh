@@ -691,16 +691,8 @@ def create_save_origin_request(
 
     assert sor is not None
     
-    # Save content-origin mapping when save request is accepted
-    if save_request_status == SAVE_REQUEST_ACCEPTED and task:
-        try:
-            # Create a mapping for the origin URL
-            # Note: This is a placeholder - actual content mapping will be created
-            # when content is actually loaded by the scheduler task
-            save_content_origin_mapping("placeholder", origin_url)
-            logger.info(f"Created content-origin mapping for origin: {origin_url}")
-        except Exception as e:
-            logger.warning(f"Failed to create content-origin mapping: {e}")
+    # Note: Content-origin mappings will be created when the visit is completed
+    # in the _update_save_request_info function
     
     return _update_save_request_info(sor, task)
 
