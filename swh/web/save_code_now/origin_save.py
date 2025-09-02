@@ -988,7 +988,7 @@ def _create_content_origin_mappings(snapshot_id: str, origin_url: str) -> None:
             return
         
         # Get API base URL from environment or use default
-        api_base_url = os.environ.get('SWH_API_BASE_URL', 'http://localhost')
+        api_base_url = os.environ.get('SWH_API_BASE_URL', 'http://swh-web:5004')
         
         # Get snapshot information
         response = requests.get(f"{api_base_url}/api/1/snapshot/{snapshot_id}/")
